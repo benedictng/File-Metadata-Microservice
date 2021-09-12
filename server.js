@@ -1,18 +1,41 @@
 var express = require('express');
 var cors = require('cors');
 require('dotenv').config()
+var multer = require('multer')
+const bodyParser = require("body-parser");
+
 
 var app = express();
+app.use(bodyParser.urlencoded({ extended: "false" }));
+app.use(bodyParser.json());
 
 app.use(cors());
 app.use('/public', express.static(process.cwd() + '/public'));
+
+const fileStorageEngine = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "./images"); //important this is a direct path fron our current file to storage location
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + "--" + file.originalname);
+  },
+});
+
+const upload = multer({ storage: fileStorageEngine })
 
 app.get('/', function (req, res) {
     res.sendFile(process.cwd() + '/views/index.html');
 });
 
 
-
+app.post('/api/fileanalyse', upload.single('upfile'), (req, res) => {
+  console.log(req.file)
+  res.send({
+    name: req.file.originalname,
+    type: req.file.mimetype,
+    size: req.file.size
+  })
+})
 
 const port = process.env.PORT || 3000;
 app.listen(port, function () {
